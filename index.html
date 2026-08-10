@@ -1,40 +1,493 @@
 <!DOCTYPE html>
-<html lang="fa">
+<html lang="fa" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سکه من</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>فروشگاه گیفت تلگرام</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-void:#050914;
+    --bg-deep:#0a1128;
+    --bg-card:#101a30;
+    --bg-card-2:#16213d;
+    --accent-blue:#4f7fff;
+    --accent-violet:#8b6bff;
+    --accent-gold:#ffc94a;
+    --accent-gold-2:#ff9f4a;
+    --text-primary:#eef2ff;
+    --text-muted:#8993b8;
+    --text-dim:#5c6690;
+    --border:rgba(255,255,255,.07);
+    --border-strong:rgba(255,255,255,.14);
+    --danger:#ff5f6d;
+    --success:#3ddc97;
+    --radius-lg:22px;
+    --radius-md:16px;
+    --radius-sm:10px;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--tg-theme-bg-color, #0f0f1a);
-            color: var(--tg-theme-text-color, #ffffff);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            touch-action: manipulation;
-        }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:'Vazirmatn', sans-serif;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(79,127,255,.18), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, rgba(139,107,255,.14), transparent 55%),
+      var(--bg-void);
+    color:var(--text-primary);
+    min-height:100vh;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--accent-blue); color:#fff;}
+  button{font-family:inherit; border:none; cursor:pointer; background:none; color:inherit;}
+  input{font-family:inherit; color:inherit;}
+  ::-webkit-scrollbar{display:none;}
 
-        .container {
-            width: 100%;
-            max-width: 400px;
-            padding: 20px;
-            text-align: center;
-            position: relative;
-        }
+  .app{
+    max-width:480px;
+    margin:0 auto;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+  }
 
+  /* ---------- Header ---------- */
+  .topbar{
+    position:sticky; top:0; z-index:40;
+    padding:calc(16px + var(--safe-top)) 18px 14px;
+    background:linear-gradient(180deg, rgba(5,9,20,.96) 60%, rgba(5,9,20,0));
+    backdrop-filter:blur(10px);
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+  }
+  .user-chip{display:flex; align-items:center; gap:10px; min-width:0;}
+  .avatar{
+    width:40px; height:40px; border-radius:50%;
+    background:linear-gradient(135deg, var(--accent-blue), var(--accent-violet));
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:15px; flex-shrink:0;
+    box-shadow:0 0 0 2px rgba(255,255,255,.06);
+  }
+  .user-meta{min-width:0;}
+  .user-name{font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px;}
+  .user-sub{font-size:11.5px; color:var(--text-muted); margin-top:1px;}
+  .balance-pill{
+    display:flex; align-items:center; gap:6px;
+    background:var(--bg-card);
+    border:1px solid var(--border-strong);
+    padding:8px 12px 8px 8px;
+    border-radius:999px;
+    flex-shrink:0;
+  }
+  .balance-pill .star{font-size:15px;}
+  .balance-pill .amt{font-size:13.5px; font-weight:800; font-variant-numeric:tabular-nums;}
+
+  /* ---------- Scroll area ---------- */
+  .views{flex:1; padding:2px 18px calc(100px + var(--safe-bottom));}
+  .view{display:none; animation:fadeUp .35s ease both;}
+  .view.active{display:block;}
+  @keyframes fadeUp{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);}}
+
+  .section-label{
+    font-size:12.5px; color:var(--text-muted); font-weight:700;
+    letter-spacing:.02em; margin:22px 2px 10px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .section-label .link{color:var(--accent-blue); font-size:12px; font-weight:700; cursor:pointer;}
+
+  /* ---------- Signature: Foil balance card ---------- */
+  .balance-card{
+    position:relative;
+    margin-top:14px;
+    border-radius:var(--radius-lg);
+    padding:22px 20px;
+    overflow:hidden;
+    background:
+      linear-gradient(155deg, #16255c 0%, #0d1533 45%, #1a1140 100%);
+    border:1px solid var(--border-strong);
+    isolation:isolate;
+  }
+  .balance-card::before{
+    content:'';
+    position:absolute; inset:-40%;
+    background:conic-gradient(from 210deg at 30% 20%, rgba(79,127,255,.35), rgba(139,107,255,.3) 25%, transparent 45%, rgba(255,201,74,.22) 65%, transparent 85%);
+    animation:foilspin 14s linear infinite;
+    z-index:-1;
+    opacity:.9;
+  }
+  @keyframes foilspin{to{transform:rotate(360deg);}}
+  .balance-card .label{font-size:12.5px; color:rgba(238,242,255,.65); font-weight:600;}
+  .balance-card .value{
+    font-size:34px; font-weight:900; margin-top:6px;
+    display:flex; align-items:baseline; gap:8px; font-variant-numeric:tabular-nums;
+  }
+  .balance-card .value .unit{font-size:15px; color:rgba(238,242,255,.7); font-weight:700;}
+  .balance-card .toman{font-size:12.5px; color:rgba(238,242,255,.55); margin-top:4px;}
+  .balance-card .actions{display:flex; gap:10px; margin-top:18px;}
+  .bc-btn{
+    flex:1; padding:12px 10px; border-radius:var(--radius-sm);
+    font-size:13px; font-weight:800; text-align:center;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    transition:transform .15s ease, filter .15s ease;
+  }
+  .bc-btn:active{transform:scale(.96);}
+  .bc-btn.primary{background:linear-gradient(135deg, var(--accent-blue), var(--accent-violet)); color:#fff;}
+  .bc-btn.ghost{background:rgba(255,255,255,.07); border:1px solid var(--border-strong); color:var(--text-primary);}
+
+  /* ---------- Stats row ---------- */
+  .stats-row{display:flex; gap:10px; margin-top:16px;}
+  .stat-box{
+    flex:1; background:var(--bg-card); border:1px solid var(--border);
+    border-radius:var(--radius-md); padding:13px 14px;
+  }
+  .stat-box .num{font-size:19px; font-weight:800; font-variant-numeric:tabular-nums;}
+  .stat-box .lbl{font-size:11.5px; color:var(--text-muted); margin-top:3px;}
+
+  /* ---------- Activity list ---------- */
+  .activity-item{
+    display:flex; align-items:center; gap:12px;
+    padding:12px 4px; border-bottom:1px solid var(--border);
+  }
+  .activity-item:last-child{border-bottom:none;}
+  .act-icon{
+    width:38px; height:38px; border-radius:12px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:17px;
+    background:var(--bg-card-2);
+  }
+  .act-info{flex:1; min-width:0;}
+  .act-title{font-size:13.5px; font-weight:700;}
+  .act-time{font-size:11.5px; color:var(--text-muted); margin-top:2px;}
+  .act-amt{font-size:13px; font-weight:800; font-variant-numeric:tabular-nums; flex-shrink:0;}
+  .act-amt.plus{color:var(--success);}
+  .act-amt.minus{color:var(--danger);}
+
+  .empty-state{
+    text-align:center; padding:50px 20px; color:var(--text-muted);
+  }
+  .empty-state .ic{font-size:38px; margin-bottom:10px;}
+  .empty-state .t{font-size:14px; font-weight:700; color:var(--text-primary); margin-bottom:4px;}
+  .empty-state .d{font-size:12.5px; line-height:1.7;}
+
+  /* ---------- Top-up view ---------- */
+  .amount-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px;}
+  .amount-chip{
+    padding:14px 6px; text-align:center; border-radius:var(--radius-sm);
+    background:var(--bg-card); border:1px solid var(--border);
+    font-size:13.5px; font-weight:800; transition:.15s ease;
+  }
+  .amount-chip .s{display:block; font-size:11px; color:var(--text-muted); font-weight:600; margin-top:2px;}
+  .amount-chip.selected{border-color:var(--accent-blue); background:rgba(79,127,255,.12); box-shadow:0 0 0 1px var(--accent-blue) inset;}
+
+  .custom-input-wrap{
+    margin-top:12px; display:flex; align-items:center; gap:10px;
+    background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-sm);
+    padding:12px 14px;
+  }
+  .custom-input-wrap input{
+    flex:1; background:none; border:none; outline:none; font-size:14px; font-weight:700;
+    text-align:right; font-variant-numeric:tabular-nums;
+  }
+  .custom-input-wrap input::placeholder{color:var(--text-dim); font-weight:500;}
+  .custom-input-wrap .star{font-size:16px;}
+
+  .pay-methods{display:flex; flex-direction:column; gap:8px; margin-top:12px;}
+  .pay-method{
+    display:flex; align-items:center; gap:12px;
+    background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-sm);
+    padding:13px 14px; transition:.15s ease;
+  }
+  .pay-method.selected{border-color:var(--accent-violet); background:rgba(139,107,255,.1);}
+  .pay-method .pm-ic{font-size:18px; width:26px; text-align:center;}
+  .pay-method .pm-info{flex:1;}
+  .pay-method .pm-title{font-size:13.5px; font-weight:700;}
+  .pay-method .pm-sub{font-size:11px; color:var(--text-muted); margin-top:1px;}
+  .pay-method .pm-radio{
+    width:18px; height:18px; border-radius:50%; border:2px solid var(--border-strong); flex-shrink:0; position:relative;
+  }
+  .pay-method.selected .pm-radio{border-color:var(--accent-violet);}
+  .pay-method.selected .pm-radio::after{
+    content:''; position:absolute; inset:3px; border-radius:50%; background:var(--accent-violet);
+  }
+
+  .submit-btn{
+    width:100%; margin-top:20px; padding:15px; border-radius:var(--radius-md);
+    background:linear-gradient(135deg, var(--accent-blue), var(--accent-violet));
+    color:#fff; font-size:14.5px; font-weight:800; text-align:center;
+    box-shadow:0 8px 24px -8px rgba(79,127,255,.55);
+    transition:transform .15s ease;
+  }
+  .submit-btn:active{transform:scale(.97);}
+  .submit-btn:disabled{opacity:.4; box-shadow:none;}
+
+  /* ---------- Gift grids ---------- */
+  .gift-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px;}
+  .gift-card{
+    position:relative;
+    background:var(--bg-card);
+    border:1px solid var(--border);
+    border-radius:var(--radius-md);
+    padding:16px 14px 14px;
+    overflow:hidden;
+  }
+  .gift-card::after{
+    content:''; position:absolute; top:-30%; right:-30%; width:70%; height:70%;
+    background:radial-gradient(circle, rgba(139,107,255,.18), transparent 70%);
+    pointer-events:none;
+  }
+  .gift-emoji{font-size:34px; display:block; text-align:center; filter:drop-shadow(0 4px 10px rgba(0,0,0,.35));}
+  .gift-name{font-size:13px; font-weight:700; text-align:center; margin-top:10px;}
+  .gift-meta{font-size:10.5px; color:var(--text-muted); text-align:center; margin-top:3px;}
+  .gift-price{
+    display:flex; align-items:center; justify-content:center; gap:4px;
+    font-size:13px; font-weight:800; margin-top:10px; font-variant-numeric:tabular-nums;
+    color:var(--accent-gold);
+  }
+  .buy-btn{
+    width:100%; margin-top:10px; padding:9px; border-radius:10px;
+    background:rgba(255,255,255,.07); border:1px solid var(--border-strong);
+    font-size:12px; font-weight:800; text-align:center; transition:.15s ease;
+  }
+  .buy-btn:active{transform:scale(.95);}
+  .buy-btn.owned{background:rgba(61,220,151,.12); border-color:rgba(61,220,151,.3); color:var(--success);}
+
+  .owned-badge{
+    position:absolute; top:10px; left:10px; background:rgba(61,220,151,.15);
+    color:var(--success); font-size:9.5px; font-weight:800; padding:3px 7px; border-radius:999px;
+    border:1px solid rgba(61,220,151,.3);
+  }
+
+  /* ---------- Premium banner ---------- */
+  .premium-banner{
+    margin-top:14px; border-radius:var(--radius-lg); padding:20px;
+    background:linear-gradient(150deg, #2a1f5c, #0d1533 70%);
+    border:1px solid var(--border-strong); position:relative; overflow:hidden;
+  }
+  .premium-banner::before{
+    content:''; position:absolute; top:-50%; left:-20%; width:80%; height:150%;
+    background:radial-gradient(circle, rgba(255,201,74,.16), transparent 65%);
+  }
+  .premium-title{display:flex; align-items:center; gap:8px; font-size:16px; font-weight:800;}
+  .premium-desc{font-size:12.5px; color:var(--text-muted); margin-top:6px; line-height:1.8;}
+  .plan-tabs{display:flex; gap:8px; margin-top:16px;}
+  .plan-tab{
+    flex:1; text-align:center; padding:10px 4px; border-radius:12px;
+    background:rgba(255,255,255,.06); border:1px solid var(--border);
+    font-size:12px; font-weight:700; position:relative;
+  }
+  .plan-tab .pt-price{display:block; font-size:11px; color:var(--accent-gold); margin-top:3px; font-weight:800;}
+  .plan-tab.selected{border-color:var(--accent-gold); background:rgba(255,201,74,.1);}
+  .plan-tab .badge{
+    position:absolute; top:-8px; left:50%; transform:translateX(-50%);
+    background:var(--accent-gold); color:#1a1030; font-size:8.5px; font-weight:900;
+    padding:2px 6px; border-radius:999px; white-space:nowrap;
+  }
+  .premium-buy{
+    margin-top:16px; padding:13px; border-radius:12px; text-align:center;
+    background:linear-gradient(135deg, var(--accent-gold), var(--accent-gold-2));
+    color:#241505; font-size:13.5px; font-weight:900;
+  }
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position:fixed; bottom:calc(96px + var(--safe-bottom)); left:50%; transform:translateX(-50%) translateY(20px);
+    background:#1a2340; border:1px solid var(--border-strong); color:var(--text-primary);
+    padding:12px 18px; border-radius:999px; font-size:13px; font-weight:700;
+    display:flex; align-items:center; gap:8px; z-index:100; opacity:0; pointer-events:none;
+    transition:all .3s cubic-bezier(.34,1.56,.64,1); box-shadow:0 10px 30px -8px rgba(0,0,0,.5);
+    max-width:90%; white-space:nowrap;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto;}
+
+  /* ---------- Bottom nav ---------- */
+  .bottom-nav{
+    position:fixed; bottom:0; left:0; right:0; z-index:50;
+    max-width:480px; margin:0 auto;
+    background:rgba(10,17,40,.92); backdrop-filter:blur(14px);
+    border-top:1px solid var(--border);
+    padding:10px 10px calc(10px + var(--safe-bottom));
+    display:flex; justify-content:space-around;
+  }
+  .nav-btn{
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    padding:6px 14px; border-radius:12px; color:var(--text-dim);
+    font-size:10.5px; font-weight:700; transition:.2s ease; flex:1;
+  }
+  .nav-btn .ic{font-size:19px; transition:.2s ease;}
+  .nav-btn.active{color:var(--accent-blue);}
+  .nav-btn.active .ic{transform:translateY(-2px);}
+
+  h1.page-title{font-size:19px; font-weight:800; padding-top:14px;}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="user-chip">
+      <div class="avatar" id="avatarBox">؟</div>
+      <div class="user-meta">
+        <div class="user-name" id="userNameTop">کاربر مهمان</div>
+        <div class="user-sub" id="userSubTop">خوش آمدی 👋</div>
+      </div>
+    </div>
+    <div class="balance-pill">
+      <span class="star">⭐</span>
+      <span class="amt" id="topBalance">0</span>
+    </div>
+  </div>
+
+  <!-- Scrollable views -->
+  <div class="views">
+
+    <!-- ===== DASHBOARD ===== -->
+    <section class="view active" id="view-dashboard">
+      <div class="balance-card">
+        <div class="label">موجودی حساب شما</div>
+        <div class="value"><span id="mainBalance">0</span><span class="unit">⭐ استارز</span></div>
+        <div class="toman">معادل تقریبی: <span id="tomanEq">۰</span> تومان</div>
+        <div class="actions">
+          <button class="bc-btn primary" data-nav="topup">شارژ حساب</button>
+          <button class="bc-btn ghost" data-nav="store">خرید گیفت</button>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="num" id="statGifts">0</div>
+          <div class="lbl">گیفت خریداری‌شده</div>
+        </div>
+        <div class="stat-box">
+          <div class="num" id="statTx">0</div>
+          <div class="lbl">تراکنش انجام‌شده</div>
+        </div>
+      </div>
+
+      <div class="section-label">
+        <span>فعالیت اخیر</span>
+      </div>
+      <div id="activityList"></div>
+    </section>
+
+    <!-- ===== TOP-UP ===== -->
+    <section class="view" id="view-topup">
+      <h1 class="page-title">شارژ حساب</h1>
+
+      <div class="section-label" style="margin-top:16px;">مبلغ شارژ (استارز)</div>
+      <div class="amount-grid" id="amountGrid"></div>
+
+      <div class="custom-input-wrap">
+        <span class="star">⭐</span>
+        <input type="number" id="customAmount" placeholder="مبلغ دلخواه را وارد کنید" inputmode="numeric">
+      </div>
+
+      <div class="section-label">روش پرداخت</div>
+      <div class="pay-methods" id="payMethods"></div>
+
+      <button class="submit-btn" id="topupSubmit">پرداخت و شارژ حساب</button>
+    </section>
+
+    <!-- ===== MY GIFTS ===== -->
+    <section class="view" id="view-mygifts">
+      <h1 class="page-title">گیفت‌های من</h1>
+      <div class="gift-grid" id="myGiftsGrid" style="margin-top:16px;"></div>
+      <div class="empty-state" id="myGiftsEmpty" style="display:none;">
+        <div class="ic">🎁</div>
+        <div class="t">هنوز گیفتی نداری</div>
+        <div class="d">از قسمت فروشگاه اولین گیفتت رو<br>برای خودت یا دوستات بخر.</div>
+      </div>
+    </section>
+
+    <!-- ===== STORE ===== -->
+    <section class="view" id="view-store">
+      <h1 class="page-title">فروشگاه</h1>
+
+      <div class="premium-banner">
+        <div class="premium-title">✨ تلگرام پریمیوم</div>
+        <div class="premium-desc">امکانات اختصاصی، استیکر و ری‌اکشن نامحدود، دانلود پرسرعت و بدون تبلیغات.</div>
+        <div class="plan-tabs" id="planTabs"></div>
+        <button class="premium-buy" id="premiumBuyBtn">خرید اشتراک پریمیوم</button>
+      </div>
+
+      <div class="section-label" style="margin-top:24px;">گیفت‌های موجود</div>
+      <div class="gift-grid" id="storeGrid"></div>
+    </section>
+
+  </div>
+
+  <!-- Bottom navigation -->
+  <div class="bottom-nav">
+    <button class="nav-btn active" data-nav="dashboard">
+      <span class="ic">🏠</span><span>داشبورد</span>
+    </button>
+    <button class="nav-btn" data-nav="topup">
+      <span class="ic">💳</span><span>شارژ حساب</span>
+    </button>
+    <button class="nav-btn" data-nav="mygifts">
+      <span class="ic">🎁</span><span>گیفت‌های من</span>
+    </button>
+    <button class="nav-btn" data-nav="store">
+      <span class="ic">🛍️</span><span>فروشگاه</span>
+    </button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- Telegram WebApp setup ---------------- */
+  const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+  if (tg) {
+    tg.ready();
+    tg.expand();
+    try { tg.setHeaderColor('#050914'); } catch(e){}
+    try { tg.setBackgroundColor('#050914'); } catch(e){}
+  }
+  function haptic(type){
+    if (tg && tg.HapticFeedback) {
+      if (type === 'success' || type === 'error' || type === 'warning') tg.HapticFeedback.notificationOccurred(type);
+      else tg.HapticFeedback.impactOccurred(type || 'light');
+    }
+  }
+
+  /* ---------------- Mock in-memory state ---------------- */
+  /* در نسخه واقعی، این بخش باید از بک‌اند/دیتابیس شما (مثلا از طریق API بات) خوانده و نوشته شود. */
+  const tgUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user : null;
+
+  const state = {
+    user: {
+      name: tgUser ? [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ') : 'کاربر مهمان',
+      username: tgUser && tgUser.username ? '@' + tgUser.username : 'میهمان تست',
+    },
+    balance: 350,
+    starToToman: 850, // نرخ تقریبی هر استار به تومان — این را با نرخ واقعی خودتان جایگزین کنید
+    txCount: 4,
+    activity: [
+      { icon:'💳', title:'شارژ حساب', time:'امروز، ۱۰:۲۰', amount:200, type:'plus' },
+      { icon:'🎁', title:'خرید گیفت «خرس عروسکی»', time:'دیروز، ۱۸:۴۵', amount:60, type:'minus' },
+      { icon:'🎁', title:'خرید گیفت «گل رز»', time:'۲ روز پیش', amount:35, type:'minus' },
+      { icon:'💳', title:'شارژ حساب', time:'۴ روز پیش', amount:150, type:'plus' },
+    ],
+    myGifts: [
+      { id:'g2', emoji:'🌹', name:'گل رز', date:'۲ روز پیش' },
+    ],
+    selectedAmount: 100,
+    customAmount: null,
+    selectedPayMethod: 'card',
+    selectedPlan: 1,
+  };
+
+  const AMOUNTS = [50, 100, 200, 500, 1000, 2
         /* هدر بالا */
         .header {
             display: flex;
