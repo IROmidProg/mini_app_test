@@ -1,24 +1,627 @@
 <!DOCTYPE html>
-<html>
+<html lang="fa">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مینی اپ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>سکه من</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--tg-theme-bg-color, #0f0f1a);
+            color: var(--tg-theme-text-color, #ffffff);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        /* هدر بالا */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            margin-bottom: 10px;
+        }
+
+        .level-badge {
+            background: var(--tg-theme-button-color, #4a4a6a);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 10px 0 20px 0;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 22px;
+            font-weight: bold;
+            background: var(--tg-theme-secondary-bg-color, #1a1a2e);
+            padding: 8px 20px;
+            border-radius: 12px;
+            min-width: 80px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--tg-theme-hint-color, #8888aa);
+            margin-top: 4px;
+        }
+
+        /* سکه اصلی */
+        .coin-wrapper {
+            position: relative;
+            margin: 20px auto;
+            touch-action: manipulation;
+        }
+
+        .coin {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #f7d94e, #d4a017);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+            box-shadow: 0 8px 40px rgba(212, 160, 23, 0.4),
+                        inset 0 -8px 20px rgba(0,0,0,0.2),
+                        inset 0 8px 20px rgba(255,255,255,0.3);
+            cursor: pointer;
+            transition: transform 0.1s ease;
+            touch-action: manipulation;
+            position: relative;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .coin:active {
+            transform: scale(0.92);
+        }
+
+        .coin-sparkle {
+            position: absolute;
+            top: 10%;
+            left: 15%;
+            width: 30%;
+            height: 30%;
+            background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        /* انیمیشن +۱ که موقع کلیک میپره */
+        .float-text {
+            position: absolute;
+            font-size: 28px;
+            font-weight: bold;
+            color: #f7d94e;
+            pointer-events: none;
+            animation: floatUp 0.8s ease-out forwards;
+            z-index: 10;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-120px) scale(1.3);
+            }
+        }
+
+        /* نوار پیشرفت سطح */
+        .level-progress {
+            width: 100%;
+            height: 6px;
+            background: var(--tg-theme-secondary-bg-color, #1a1a2e);
+            border-radius: 10px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .level-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #f7d94e, #d4a017);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .level-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: var(--tg-theme-hint-color, #8888aa);
+            margin-bottom: 10px;
+        }
+
+        /* دکمه‌های پایین */
+        .bottom-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            background: var(--tg-theme-button-color, #4a4a6a);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            flex: 1;
+            min-width: 100px;
+            touch-action: manipulation;
+        }
+
+        .btn:active {
+            opacity: 0.7;
+            transform: scale(0.96);
+        }
+
+        .btn-secondary {
+            background: var(--tg-theme-secondary-bg-color, #1a1a2e);
+            color: var(--tg-theme-text-color, #ffffff);
+        }
+
+        /* مودال (برای بخش‌های مختلف) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--tg-theme-bg-color, #1a1a2e);
+            border-radius: 24px;
+            padding: 30px;
+            max-width: 340px;
+            width: 90%;
+            max-height: 70vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .modal h2 {
+            margin-bottom: 16px;
+            font-size: 22px;
+        }
+
+        .modal p {
+            color: var(--tg-theme-hint-color, #8888aa);
+            margin-bottom: 12px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .modal .close-btn {
+            margin-top: 16px;
+            width: 100%;
+        }
+
+        /* لیست دوستان */
+        .friends-list {
+            list-style: none;
+            padding: 0;
+            margin: 12px 0;
+        }
+
+        .friends-list li {
+            padding: 10px 12px;
+            background: var(--tg-theme-secondary-bg-color, #0f0f1a);
+            border-radius: 10px;
+            margin-bottom: 6px;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .friends-list .bonus {
+            color: #f7d94e;
+            font-weight: bold;
+        }
+
+        /* ریسپانسیو */
+        @media (max-width: 400px) {
+            .coin {
+                width: 160px;
+                height: 160px;
+                font-size: 60px;
+            }
+            .stat-value {
+                font-size: 18px;
+                padding: 6px 14px;
+            }
+            .btn {
+                padding: 10px 16px;
+                font-size: 13px;
+                min-width: 80px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>سلام!</h1>
-    <p>این مینی‌اپ من هست</p>
-    <button onclick="sendMessage()">ارسال</button>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
+<div class="container" id="app">
+    <!-- هدر بالا -->
+    <div class="header">
+        <span class="level-badge" id="levelBadge">⭐ سطح 1</span>
+        <span style="font-size:14px; color:var(--tg-theme-hint-color);" id="usernameDisplay">کاربر</span>
+    </div>
 
-        function sendMessage() {
-            tg.sendData("دکمه کلیک شد!");
+    <!-- آمار -->
+    <div class="stats">
+        <div class="stat-item">
+            <div class="stat-value" id="coinDisplay">0</div>
+            <div class="stat-label">🪙 سکه</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="tapDisplay">1</div>
+            <div class="stat-label">👆 توان ضربه</div>
+        </div>
+    </div>
+
+    <!-- سکه اصلی -->
+    <div class="coin-wrapper">
+        <div class="coin" id="coin">
+            <div class="coin-sparkle"></div>
+            🪙
+        </div>
+        <div id="floatingContainer" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></div>
+    </div>
+
+    <!-- نوار پیشرفت سطح -->
+    <div class="level-info">
+        <span id="levelProgressText">پیشرفت: 0%</span>
+        <span id="nextLevelText">سکه تا سطح بعد: 100</span>
+    </div>
+    <div class="level-progress">
+        <div class="level-progress-bar" id="levelProgressBar"></div>
+    </div>
+
+    <!-- دکمه‌های پایین -->
+    <div class="bottom-actions">
+        <button class="btn btn-secondary" id="friendsBtn">👥 دوستان</button>
+        <button class="btn btn-secondary" id="boostBtn">⚡ تقویت</button>
+        <button class="btn btn-secondary" id="resetBtn">🔄 ریست</button>
+    </div>
+</div>
+
+<!-- مودال دوستان -->
+<div class="modal-overlay" id="friendsModal">
+    <div class="modal">
+        <h2>👥 دوستان</h2>
+        <p>برای هر دوست دعوت‌شده، ۵۰ سکه پاداش دریافت می‌کنی!</p>
+        <ul class="friends-list" id="friendsList">
+            <li>دوستی که دعوت کنی <span class="bonus">+50</span></li>
+        </ul>
+        <button class="btn close-btn" id="closeFriendsBtn">بستن</button>
+    </div>
+</div>
+
+<!-- مودال تقویت -->
+<div class="modal-overlay" id="boostModal">
+    <div class="modal">
+        <h2>⚡ تقویت</h2>
+        <p>با خرج سکه، توان ضربه‌ات رو افزایش بده!</p>
+        <div style="margin: 16px 0;">
+            <button class="btn" id="boostTapBtn" style="width:100%;">🔨 +۱ ضربه (۵۰ سکه)</button>
+        </div>
+        <button class="btn close-btn" id="closeBoostBtn">بستن</button>
+    </div>
+</div>
+
+<script>
+    // ===== راه‌اندازی تلگرام =====
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+
+    // ===== دیتا =====
+    let coins = 0;
+    let tapPower = 1;
+    let level = 1;
+    let totalClicks = 0;
+
+    // کلیدهای ذخیره‌سازی
+    const STORAGE_KEY = 'mini_app_data';
+
+    // ===== بارگذاری دیتا از localStorage =====
+    function loadData() {
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const data = JSON.parse(saved);
+                coins = data.coins || 0;
+                tapPower = data.tapPower || 1;
+                level = data.level || 1;
+                totalClicks = data.totalClicks || 0;
+            }
+        } catch (e) {
+            console.log('خطا در بارگذاری دیتا');
         }
-    </script>
+    }
+
+    // ===== ذخیره دیتا در localStorage =====
+    function saveData() {
+        try {
+            const data = {
+                coins: coins,
+                tapPower: tapPower,
+                level: level,
+                totalClicks: totalClicks
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        } catch (e) {
+            console.log('خطا در ذخیره دیتا');
+        }
+    }
+
+    // ===== محاسبه سطح =====
+    function getLevelThreshold(level) {
+        return Math.floor(100 * Math.pow(1.5, level - 1));
+    }
+
+    function getNextLevelThreshold() {
+        return getLevelThreshold(level + 1);
+    }
+
+    function getCurrentLevelThreshold() {
+        return getLevelThreshold(level);
+    }
+
+    function checkLevelUp() {
+        let newLevel = level;
+        while (coins >= getLevelThreshold(newLevel + 1)) {
+            newLevel++;
+        }
+        if (newLevel > level) {
+            level = newLevel;
+            // پیام سطح‌آپ توی کنسول
+            console.log(`🎉 سطح ${level}!`);
+            // ارسال نوتیف به تلگرام (اگه بخوای)
+            if (tg) {
+                tg.showAlert(`🎉 به سطح ${level} رسیدی!`);
+            }
+        }
+        return level;
+    }
+
+    // ===== آپدیت UI =====
+    function updateUI() {
+        // سکه
+        document.getElementById('coinDisplay').textContent = Math.floor(coins);
+        // توان ضربه
+        document.getElementById('tapDisplay').textContent = tapPower;
+        // سطح
+        document.getElementById('levelBadge').textContent = `⭐ سطح ${level}`;
+
+        // محاسبه پیشرفت
+        const currentThreshold = getCurrentLevelThreshold();
+        const nextThreshold = getNextLevelThreshold();
+        const progress = (coins - currentThreshold) / (nextThreshold - currentThreshold) * 100;
+        const clampedProgress = Math.min(100, Math.max(0, progress));
+
+        document.getElementById('levelProgressBar').style.width = `${clampedProgress}%`;
+        document.getElementById('levelProgressText').textContent = `پیشرفت: ${Math.floor(clampedProgress)}%`;
+        document.getElementById('nextLevelText').textContent = `سکه تا سطح بعد: ${Math.floor(nextThreshold - coins)}`;
+
+        // اسم کاربر (اگه از تلگرام بیاد)
+        if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            const user = tg.initDataUnsafe.user;
+            document.getElementById('usernameDisplay').textContent = user.first_name || 'کاربر';
+        }
+
+        // ذخیره خودکار
+        saveData();
+    }
+
+    // ===== کلیک روی سکه =====
+    function handleCoinClick(e) {
+        // جلوگیری از دابل کلیک
+        e.preventDefault();
+
+        // جمع کردن سکه
+        const earned = tapPower;
+        coins += earned;
+        totalClicks++;
+
+        // ایجاد انیمیشن +۱
+        createFloatText(e, `+${earned}`);
+
+        // ویبره (اگه گوشی باشه)
+        if (navigator.vibrate) {
+            navigator.vibrate(10);
+        }
+
+        // چک کردن سطح‌آپ
+        checkLevelUp();
+
+        // آپدیت UI
+        updateUI();
+
+        // ارسال دیتا به تلگرام (اختیاری)
+        // tg.sendData(`click:${earned}`);
+    }
+
+    // ===== انیمیشن متن پرنده =====
+    function createFloatText(e, text) {
+        const container = document.getElementById('floatingContainer');
+        const el = document.createElement('div');
+        el.className = 'float-text';
+        el.textContent = text;
+
+        // موقعیت تصادفی نزدیک نقطه کلیک
+        const rect = document.getElementById('coin').getBoundingClientRect();
+        const x = (e.clientX || e.touches?.[0]?.clientX || rect.left + rect.width/2) - rect.left - 20;
+        const y = (e.clientY || e.touches?.[0]?.clientY || rect.top + rect.height/2) - rect.top - 20;
+
+        el.style.left = `${Math.min(Math.max(x, 10), rect.width - 40)}px`;
+        el.style.top = `${Math.min(Math.max(y, 10), rect.height - 40)}px`;
+
+        container.appendChild(el);
+
+        // حذف بعد از انیمیشن
+        setTimeout(() => {
+            el.remove();
+        }, 800);
+    }
+
+    // ===== تقویت ضربه =====
+    function boostTap() {
+        const cost = 50;
+        if (coins >= cost) {
+            coins -= cost;
+            tapPower += 1;
+            updateUI();
+            tg.showAlert(`⚡ توان ضربه به ${tapPower} افزایش یافت!`);
+        } else {
+            tg.showAlert(`❌ سکه کافی نیست! نیاز به ${cost} سکه داری.`);
+        }
+    }
+
+    // ===== ریست بازی =====
+    function resetGame() {
+        tg.showAlert('⚠️ آیا مطمئنی؟ تمام پیشرفتت از بین میرود!', [
+            { id: 'cancel', type: 'destructive', text: 'لغو' },
+            { id: 'confirm', type: 'default', text: 'بله، ریست کن' }
+        ].then((result) => {
+            if (result === 'confirm') {
+                coins = 0;
+                tapPower = 1;
+                level = 1;
+                totalClicks = 0;
+                updateUI();
+                tg.showAlert('🔄 بازی ریست شد!');
+            }
+        }));
+    }
+
+    // ===== مدیریت مودال‌ها =====
+    function openModal(modalId) {
+        document.getElementById(modalId).classList.add('active');
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.remove('active');
+    }
+
+    // ===== رویدادها =====
+    document.addEventListener('DOMContentLoaded', function() {
+        // بارگذاری دیتا
+        loadData();
+        updateUI();
+
+        // کلیک روی سکه (هم موس و هم تاچ)
+        const coinEl = document.getElementById('coin');
+        coinEl.addEventListener('click', handleCoinClick);
+        coinEl.addEventListener('touchstart', function(e) {
+            // جلوگیری از اسکرول
+            e.preventDefault();
+            handleCoinClick(e);
+        }, { passive: false });
+
+        // دکمه دوستان
+        document.getElementById('friendsBtn').addEventListener('click', function() {
+            openModal('friendsModal');
+        });
+
+        document.getElementById('closeFriendsBtn').addEventListener('click', function() {
+            closeModal('friendsModal');
+        });
+
+        // دکمه تقویت
+        document.getElementById('boostBtn').addEventListener('click', function() {
+            openModal('boostModal');
+        });
+
+        document.getElementById('closeBoostBtn').addEventListener('click', function() {
+            closeModal('boostModal');
+        });
+
+        document.getElementById('boostTapBtn').addEventListener('click', function() {
+            boostTap();
+            closeModal('boostModal');
+        });
+
+        // دکمه ریست
+        document.getElementById('resetBtn').addEventListener('click', function() {
+            resetGame();
+        });
+
+        // بستن مودال با کلیک روی Overlay
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                }
+            });
+        });
+
+        // ذخیره هر ۱۰ ثانیه
+        setInterval(() => {
+            saveData();
+        }, 10000);
+
+        // ذخیره قبل از بسته شدن
+        window.addEventListener('beforeunload', function() {
+            saveData();
+        });
+    });
+</script>
+
 </body>
-</html>
+    </html>
